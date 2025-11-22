@@ -7,4 +7,4 @@ data:
   OPTION_A: "Cats"
   OPTION_B: "Dogs"
   POSTGRES_DB: "postgres"
-  PORT: "4000"          # ← مضافة! علشان result service
+  PORT: "4000"          

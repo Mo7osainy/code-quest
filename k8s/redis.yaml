@@ -1,0 +1,63 @@
+# ==============================
+# Redis Deployment
+# ==============================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: voting-app
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      securityContext:  # ← مضافة (على مستوى الـ Pod)
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: redis
+          image: redis:6-alpine
+          ports:
+            - containerPort: 6379
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+          securityContext:  # ← مضافة (على مستوى الـ Container)
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop:
+                - ALL
+
+---
+# ==============================
+# Redis Service (ClusterIP)
+# ==============================
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: voting-app
+  labels:
+    app: redis
+spec:
+  type: ClusterIP
+  selector:
+    app: redis
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 6379

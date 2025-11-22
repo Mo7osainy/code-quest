@@ -1,0 +1,119 @@
+name: CI/CD - Build, Scan, Push, Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-scan-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [vote, worker, result]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set image tag
+        id: vars
+        run: echo "IMAGE_TAG=${GITHUB_SHA::8}" >> $GITHUB_ENV
+
+      - name: Set image name
+        id: image_name
+        run: |
+          DOCKER_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+          case "${{ matrix.service }}" in
+            vote) echo "IMAGE_NAME=${DOCKER_USERNAME}/vote_image" >> $GITHUB_ENV ;;
+            worker) echo "IMAGE_NAME=${DOCKER_USERNAME}/worker_image" >> $GITHUB_ENV ;;
+            result) echo "IMAGE_NAME=${DOCKER_USERNAME}/result_image" >> $GITHUB_ENV ;;
+          esac
+
+      - name: Build Docker image
+        run: |
+          echo "Building $IMAGE_NAME from ./${{ matrix.service }}"
+          docker build -t $IMAGE_NAME ./${{ matrix.service }}
+
+      - name: Scan Docker image with Trivy
+        uses: aquasec/trivy-action@v2
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}
+          format: table
+          exit-code: 0
+          severity: HIGH,CRITICAL
+
+      - name: Push Docker image
+        run: |
+          IMAGE_TAG=${{ env.IMAGE_TAG }}
+          FULL_IMAGE="${{ env.IMAGE_NAME }}:${IMAGE_TAG}"
+          docker tag ${{ env.IMAGE_NAME }} $FULL_IMAGE
+          docker push $FULL_IMAGE
+
+  deploy:
+    needs: build-scan-push
+    runs-on: ubuntu-latest
+    env:
+      ENVIRONMENT: dev  # أو prod حسب الحاجة
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: '1.27.0'
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: '3.17.0'
+
+      - name: Setup Kubeconfig for Minikube
+        run: |
+          echo "${{ secrets.MINIKUBE_KUBECONFIG }}" > $HOME/.kube/config
+
+      - name: Select values file
+        run: |
+          if [ "$ENVIRONMENT" = "dev" ]; then
+            VALUES_FILE=./voting-app-chart/values-dev.yaml
+          else
+            VALUES_FILE=./voting-app-chart/values-prod.yaml
+          fi
+          echo "VALUES_FILE=$VALUES_FILE" >> $GITHUB_ENV
+
+      - name: Update image tags
+        run: |
+          IMAGE_TAG=${{ github.sha::8 }}
+          VALUES_FILE=$VALUES_FILE
+          DOCKER_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+
+          sed -i "s|^  vote:.*|  vote: ${DOCKER_USERNAME}/vote_image:${IMAGE_TAG}|" $VALUES_FILE
+          sed -i "s|^  worker:.*|  worker: ${DOCKER_USERNAME}/worker_image:${IMAGE_TAG}|" $VALUES_FILE
+          sed -i "s|^  result:.*|  result: ${DOCKER_USERNAME}/result_image:${IMAGE_TAG}|" $VALUES_FILE
+
+      - name: Deploy with Helm
+        run: |
+          # استخدام namespace والريليز من القيم
+          if [ "$ENVIRONMENT" = "dev" ]; then
+            NAMESPACE="vote-app-dev"
+            RELEASE_NAME="vote-app-dev"
+          else
+            NAMESPACE="vote-app-prod"
+            RELEASE_NAME="vote-app-prod"
+          fi
+
+          # إنشاء namespace لو مش موجود
+          kubectl get ns $NAMESPACE || kubectl create ns $NAMESPACE
+
+          # Deploy Helm
+          helm upgrade --install $RELEASE_NAME ./helm-charts \
+            -f $VALUES_FILE
+
+

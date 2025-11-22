@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: voting-app-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    environment: {{ .Values.global.environment }}
+data:
+  OPTION_A: {{ .Values.config.optionA | quote }}
+  OPTION_B: {{ .Values.config.optionB | quote }}
+  PORT: {{ .Values.config.port | quote }}
+  POSTGRES_DB: {{ .Values.config.postgresDB | quote }}
+  ENVIRONMENT: {{ .Values.global.environment | quote }}
+

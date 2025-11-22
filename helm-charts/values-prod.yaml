@@ -1,0 +1,87 @@
+global:
+  namespace: vote-app
+  environment: prod
+
+images:
+  vote: "mo7osainy/vote_image:latest"
+  result: "mo7osainy/result_image:latest"
+  worker: "mo7osainy/worker_image:latest"
+
+config:
+  optionA: "Cats"
+  optionB: "Dogs"
+  port: "4000"
+  postgresDB: "votes"
+
+vote:
+  enabled: true
+  replicaCount: 1
+  service:
+    type: NodePort
+    port: 80
+    nodePort: 32001
+
+result:
+  enabled: true
+  replicaCount: 1
+  service:
+    type: NodePort
+    port: 8081
+    targetPort: 4000
+    nodePort: 30081
+
+worker:
+  enabled: true
+  replicaCount: 1
+
+# PostgreSQL
+postgres:
+  enabled: true
+  fullnameOverride: "db"
+  service:
+    clusterIP: None
+    port: 5432
+  persistence:
+    enabled: false
+  env:
+    - name: POSTGRES_PASSWORD
+      value: "postgres"
+    - name: POSTGRES_DB
+      value: "votes"
+
+# Redis
+redis:
+  enabled: true
+  fullnameOverride: "redis"
+  service:
+    clusterIP: None
+    port: 6379
+  auth:
+    enabled: false
+  persistence:
+    enabled: false
+
+# Ingress
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: vote.local.com
+      paths:
+        - path: /
+          pathType: Prefix
+    - host: result.local.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+# Security
+security:
+  enabled: true
+  runAsUser: 1000
+  seccompProfile: true
+
+# Network Policies
+networkPolicies:
+  enabled: true
+

@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  vote:
+    build: ./vote
+    ports:
+      - "8080:80"
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      redis:
+        condition: service_healthy  
+
+  result:
+    build: ./result
+    ports:
+      - "8081:4000"
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    build: ./worker
+    networks:
+      - backend
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+
+  redis:
+    image: redis:6-alpine
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "sh", "/healthchecks/redis.sh"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - ./healthchecks:/healthchecks
+
+  db:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "sh", "-c", "apk add --no-cache postgresql-client && /healthchecks/postgres.sh"]
+      interval: 10s  
+      timeout: 10s   
+      retries: 5
+      start_period: 20s  
+    volumes:
+      - ./healthchecks:/healthchecks
+      - postgres_data:/var/lib/postgresql/data
+
+  seed:
+    build: ./seed-data
+    profiles: ["seed"]
+    networks:
+      - frontend
+    depends_on:
+      - vote
+
+networks:
+  frontend:
+  backend:
+
+volumes:
+  postgres_data:

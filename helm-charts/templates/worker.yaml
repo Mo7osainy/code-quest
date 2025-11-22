@@ -1,0 +1,78 @@
+{{- if .Values.worker.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: worker
+    environment: {{ .Values.global.environment }}
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+        environment: {{ .Values.global.environment }}
+    spec:
+      {{- if .Values.security.enabled }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ .Values.security.runAsUser }}
+        fsGroup: {{ .Values.security.runAsUser }}
+      {{- end }}
+      containers:
+      - name: worker
+        image: {{ .Values.images.worker }}
+        imagePullPolicy: IfNotPresent
+        env:
+          # من ConfigMap
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: voting-app-config
+              key: PORT
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: voting-app-config
+              key: POSTGRES_DB
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: voting-app-config
+              key: ENVIRONMENT
+          # من Secrets
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: voting-app-postgres
+              key: POSTGRES_PASSWORD
+        resources:
+          {{- toYaml .Values.worker.resources | nindent 12 }}
+        {{- if .Values.security.enabled }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: {{ .Values.security.runAsUser }}
+          capabilities:
+            drop:
+              - ALL
+          {{- if .Values.security.seccompProfile }}
+          seccompProfile:
+            type: RuntimeDefault
+          {{- end }}
+        {{- end }}
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "echo ok"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+{{- end }}
+

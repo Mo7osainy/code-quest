@@ -15,7 +15,7 @@ spec:
       labels:
         app: result
     spec:
-      securityContext:  # ← مضافة (على مستوى الـ Pod)
+      securityContext:  
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
@@ -38,7 +38,7 @@ spec:
             limits:
               memory: "256Mi"
               cpu: "200m"
-          securityContext:  # ← مضافة (على مستوى الـ Container)
+          securityContext:  
             allowPrivilegeEscalation: false
             runAsNonRoot: true
             runAsUser: 1000

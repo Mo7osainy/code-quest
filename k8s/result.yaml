@@ -22,7 +22,6 @@ spec:
       containers:
         - name: result
           image: result_image:latest
-          imagePullPolicy: Never
           ports:
             - containerPort: 4000
           env:

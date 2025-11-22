@@ -1,6 +1,3 @@
-# ==============================
-# Seed Deployment (internal, no ports, no service)
-# ==============================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,6 +17,5 @@ spec:
       containers:
         - name: seed
           image: seed_image:latest
-          imagePullPolicy: Never  # لأن الصورة موجودة محليًا
-          # لا يوجد ports أو environment variables
+       
 

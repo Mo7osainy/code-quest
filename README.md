@@ -43,16 +43,16 @@ A complete DevOps implementation of a distributed voting application with micros
 
 ### Local Deployment (Phase 1)
 ```bash
-# Start minikube cluster
+## Start minikube cluster
 minikube start
 
-# Enable ingress
+## Enable ingress
 minikube addons enable ingress
 
-# Build & run all services using Docker Compose
+## Build & run all services using Docker Compose
 docker compose up --build
 
-# Optional: Populate seed dataAccess the Application
+## Optional: Populate seed dataAccess the Application
 bash
 # Method 1: Port Forwarding
 kubectl port-forward svc/vote 32000:80 -n vote-app-dev

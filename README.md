@@ -52,42 +52,105 @@ minikube addons enable ingress
 # Build & run all services using Docker Compose
 docker compose up --build
 
-# Optional: Populate seed data
-docker compose run --rm seed
-# Dev Environment
-helm install voting-app-dev ./helm-charts -f ./helm-charts/values-dev.yaml
-
-# Prod Environment
-helm install voting-app-prod ./helm-charts -f ./helm-charts/values-prod.yaml
-# Dev environment
+# Optional: Populate seed dataAccess the Application
+bash
+# Method 1: Port Forwarding
 kubectl port-forward svc/vote 32000:80 -n vote-app-dev
 kubectl port-forward svc/result 30080:8081 -n vote-app-dev
 
-# Prod environment
-kubectl port-forward svc/vote 33000:80 -n vote-app-prod
-kubectl port-forward svc/result 33001:8081 -n vote-app-prod
-# Dev environment
-kubectl port-forward svc/vote 32000:80 -n vote-app-dev
-kubectl port-forward svc/result 30080:8081 -n vote-app-dev
+# Method 2: Ingress (after adding hosts)
+echo "$(minikube ip) vote.local.com result.local.com" | sudo tee -a /etc/hosts
+URLs
+Vote App: http://vote.local.com or http://localhost:32000
 
-# Prod environment
-kubectl port-forward svc/vote 33000:80 -n vote-app-prod
-kubectl port-forward svc/result 33001:8081 -n vote-app-prod
+Result App: http://result.local.com or http://localhost:30080
 
-ssh -i "ssh-key.pem" -L 32000:localhost:32000 ec2-user@<EC2-IP>
-ssh -i "ssh-key.pem" -L 32001:localhost:32001 ec2-user@<EC2-IP>
-
-
-helm install voting-app-dev ./helm-charts -f values-dev.yaml
+🔧 Multi-Environment Setup
+Development Environment
+bash
+helm install voting-app-dev ./voting-app -f values-dev.yaml
 Namespace: vote-app-dev
+
 Options: "Cats-Dev" vs "Dogs-Dev"
+
 NodePorts: 32001 (vote), 30081 (result)
-helm install voting-app-prod ./helm-charts -f values-prod.yaml
+
+Production Environment
+bash
+helm install voting-app-prod ./voting-app -f values-prod.yaml
 Namespace: vote-app-prod
+
 Options: "Cats-Prod" vs "Dogs-Prod"
+
 NodePorts: 32002 (vote), 30082 (result)
 
+🛡️ Security Features
+Pod Security: Restricted PSA policies
 
+Network Isolation: Database network policies
+
+Non-root Containers: Run as user 1000
+
+Seccomp Profiles: RuntimeDefault
+
+Capability Drop: All privileges removed
+
+Resource Limits: CPU/Memory constraints
+
+📊 Architecture Details
+Services
+vote: Python Flask app (port 80)
+
+result: Node.js app (port 4000)
+
+worker: .NET worker service
+
+redis: Message broker (port 6379)
+
+postgres: Database (port 5432)
+
+Networking
+Frontend Tier: vote + result (user-facing)
+
+Backend Tier: worker + redis + postgres (internal)
+
+Headless Services: For stateful workloads
+
+🔄 Data Flow
+Users vote → Vote service
+
+Votes queued → Redis
+
+Worker processes → Redis to PostgreSQL
+
+Results displayed → Result service via WebSocket
+
+🚨 Troubleshooting
+bash
+# Check pod status
+kubectl get pods -n vote-app-dev
+
+# View logs
+kubectl logs -f deployment/vote -n vote-app-dev
+
+# Check services
+kubectl get svc -n vote-app-dev
+
+# Debug ingress
+kubectl get ingress -n vote-app-dev
+📝 Notes
+Uses minikube for local Kubernetes development
+
+Headless Services for stateful applications
+
+Network Policies enforce backend isolation
+
+Helm for templating and multi-environment management
+
+Production-ready security configurations
+
+Status: ✅ Fully Implemented - Ready for Production Deployment
+docker compose run --rm seed
 
 
 

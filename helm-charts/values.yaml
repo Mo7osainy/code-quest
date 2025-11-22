@@ -1,6 +1,6 @@
 global:
   namespace: vote-app
-  environment: production
+  environment: prod
 
 images:
   vote: "mo7osainy/vote_image:latest"

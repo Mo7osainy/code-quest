@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-scan-push:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latestٍٍ
     strategy:
       matrix:
         service: [vote, worker, result]
@@ -60,7 +60,7 @@ jobs:
     needs: build-scan-push
     runs-on: ubuntu-latest
     env:
-      ENVIRONMENT: dev  # أو prod حسب الحاجة
+      ENVIRONMENT: dev  
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -100,7 +100,6 @@ jobs:
 
       - name: Deploy with Helm
         run: |
-          # استخدام namespace والريليز من القيم
           if [ "$ENVIRONMENT" = "dev" ]; then
             NAMESPACE="vote-app-dev"
             RELEASE_NAME="vote-app-dev"
@@ -108,8 +107,7 @@ jobs:
             NAMESPACE="vote-app-prod"
             RELEASE_NAME="vote-app-prod"
           fi
-
-          # إنشاء namespace لو مش موجود
+          
           kubectl get ns $NAMESPACE || kubectl create ns $NAMESPACE
 
           # Deploy Helm

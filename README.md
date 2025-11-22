@@ -43,14 +43,14 @@ A complete DevOps implementation of a distributed voting application with micros
 
 ### Local Deployment (Phase 1)
 ```bash
-## Start minikube cluster
-minikube start
+### start minikube cluster
+    minikube start
 
 ## Enable ingress
-minikube addons enable ingress
+   minikube addons enable ingress
 
 ## Build & run all services using Docker Compose
-docker compose up --build
+   docker compose up --build
 
 ## Optional: Populate seed dataAccess the Application
 bash

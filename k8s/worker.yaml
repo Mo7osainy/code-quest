@@ -15,14 +15,13 @@ spec:
       labels:
         app: worker
     spec:
-      securityContext:  # ← مضافة (على مستوى الـ Pod)
+      securityContext: 
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
       containers:
         - name: worker
           image: worker_image:latest
-          imagePullPolicy: Never
           resources:
             requests:
               memory: "64Mi"
@@ -30,7 +29,7 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "100m"
-          securityContext:  # ← مضافة (على مستوى الـ Container)
+          securityContext: 
             allowPrivilegeEscalation: false
             runAsNonRoot: true
             runAsUser: 1000

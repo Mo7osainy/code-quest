@@ -15,14 +15,13 @@ spec:
       labels:
         app: vote
     spec:
-      securityContext:  # ← مضافة (على مستوى الـ Pod)
+      securityContext: 
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
       containers:
         - name: vote
           image: vote_image:latest
-          imagePullPolicy: Never
           ports:
             - containerPort: 80
           env:
@@ -43,7 +42,7 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "100m"
-          securityContext:  # ← مضافة (على مستوى الـ Container)
+          securityContext:  
             allowPrivilegeEscalation: false
             runAsNonRoot: true
             runAsUser: 1000

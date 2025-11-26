@@ -4,7 +4,7 @@ on:
 
 jobs:
   build-scan-push:
-    runs-on: ubuntu-latestٍٍ
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         service: [vote, worker, result]
@@ -87,7 +87,7 @@ jobs:
 
       - name: Update image tags
         run: |
-          IMAGE_TAG=${{ github.sha::8 }}
+          IMAGE_TAG=${{ github.sha[0:8] }}
           VALUES_FILE=$VALUES_FILE
           DOCKER_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
 
